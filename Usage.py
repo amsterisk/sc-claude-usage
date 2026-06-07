@@ -210,6 +210,7 @@ class Usage(ActionBase):
         self._refreshing = False
         self._poll_ticks = 0
         self._shown_eta = None     # last countdown string drawn (for cheap re-render)
+        self._busy = False         # short lock-out after a launch (swallows double presses)
 
     # ---------- per-key display settings ----------
     def _show_pct(self) -> bool:
@@ -260,6 +261,24 @@ class Usage(ActionBase):
             self._render()
         finally:
             self._refreshing = False
+
+    # ---------- press ----------
+    def on_key_down(self):
+        """Open the claude-monitor TUI in a new terminal on the host."""
+        if self._busy:
+            return
+        self._busy = True
+        threading.Thread(target=self._open_monitor, name="CUOpen",
+                         daemon=True).start()
+        GLib.timeout_add(1200, self._clear_busy)
+
+    def _clear_busy(self):
+        self._busy = False
+        return False
+
+    def _open_monitor(self):
+        cfg = config.load(self.plugin_base)
+        usage.open_monitor(cfg.get("term_cmd", "gnome-terminal -- {cmd}"))
 
     # ---------- rendering ----------
     def _render(self):

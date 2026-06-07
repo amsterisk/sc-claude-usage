@@ -43,6 +43,13 @@ launcher; if yours lives somewhere unusual, set the path explicitly in the plugi
 | **Refresh interval (s)** | How often usage is re-read (default 30). The countdown still ticks live between refreshes. |
 | **History window (h)** | How much history to analyse (default 96). The custom-plan P90 limits need a few days of context. |
 | **claude-monitor Python** | Optional override for the interpreter path. Blank = auto-discover. |
+| **Terminal command** | Command run when a key is pressed; `{cmd}` is replaced with the resolved `claude-monitor` path. Default `gnome-terminal -- {cmd}`. Swap in your own terminal, e.g. `konsole -e {cmd}` or `kitty {cmd}`. |
+
+## Pressing a key
+
+Pressing a Claude Usage key opens the live **`claude-monitor`** TUI in a new terminal (on the host, via
+`flatpak-spawn --host`). The full launcher path is resolved up front so it works even when the terminal
+doesn't inherit your `uv`/`pipx` PATH.
 
 ### Per key (the key's action settings)
 

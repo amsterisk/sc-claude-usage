@@ -50,6 +50,11 @@ class PluginSettings:
         self.py_row.connect("notify::text", self._on_python)
         group.add(self.py_row)
 
+        self.term_row = Adw.EntryRow(title="Terminal command")
+        self.term_row.set_text(cfg.get("term_cmd", "gnome-terminal -- {cmd}"))
+        self.term_row.connect("notify::text", self._on_term)
+        group.add(self.term_row)
+
         return group
 
     def _on_plan(self, combo, _pspec):
@@ -65,4 +70,9 @@ class PluginSettings:
     def _on_python(self, entry, _pspec):
         cfg = config.load(self.plugin_base)
         cfg["python"] = entry.get_text()
+        config.save(self.plugin_base, cfg)
+
+    def _on_term(self, entry, _pspec):
+        cfg = config.load(self.plugin_base)
+        cfg["term_cmd"] = entry.get_text()
         config.save(self.plugin_base, cfg)

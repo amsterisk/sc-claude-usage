@@ -9,8 +9,14 @@ action instead. Shape:
       "plan":       "custom",   # custom | pro | max5 | max20 — picks the limits
       "poll":       30,         # seconds between usage refreshes
       "hours_back": 96,         # how much history to analyse (P90 needs context)
-      "python":     ""          # override path to the claude-monitor venv python
+      "python":     "",         # override path to the claude-monitor venv python
+      "term_cmd":   "gnome-terminal -- {cmd}"  # pressing a key opens this; {cmd} = claude-monitor
     }
+
+Pressing a Usage key runs `term_cmd` on the host (via flatpak-spawn --host), with
+{cmd} filled in with the resolved `claude-monitor` launcher path — i.e. it opens
+the live monitor TUI in a new terminal. The template is split into argv with
+shlex, so values needn't be quoted.
 
 "custom" mirrors claude-monitor's own default: limits are auto-detected from your
 own history (P90), so the traffic lights match what the monitor TUI shows.
@@ -30,6 +36,7 @@ DEFAULTS = {
     "poll": 30,
     "hours_back": 96,
     "python": "",
+    "term_cmd": "gnome-terminal -- {cmd}",
 }
 
 

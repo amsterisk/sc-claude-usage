@@ -16,6 +16,7 @@ plus the block's reset time.
 
 import json
 import os
+import shlex
 import subprocess
 import threading
 import time
@@ -156,6 +157,66 @@ def _run_snapshot(plan: str, hours_back: int, override: str) -> dict:
         return json.loads(out.splitlines()[-1])
     except Exception:
         return {"error": f"unparseable: {out[:200]}"}
+
+
+_LAUNCHER = None
+_LAUNCHER_LOCK = threading.Lock()
+
+
+def _launcher() -> str:
+    """Absolute path to the `claude-monitor` launcher on the host.
+
+    Found via `command -v claude-monitor` and cached. A new terminal won't
+    necessarily inherit the user's PATH (uv/pipx shims often aren't on the
+    default login PATH a terminal app spawns with), so we resolve the full path
+    here and hand the terminal an absolute command. Falls back to the bare name.
+    """
+    global _LAUNCHER
+    with _LAUNCHER_LOCK:
+        if _LAUNCHER:
+            return _LAUNCHER
+    cmd = ["sh", "-lc", "command -v claude-monitor 2>/dev/null"]
+    if _in_flatpak():
+        cmd = ["flatpak-spawn", "--host", *cmd]
+    found = ""
+    try:
+        r = subprocess.run(cmd, cwd=_host_cwd(), capture_output=True, text=True,
+                           timeout=8)
+        found = r.stdout.strip().splitlines()[-1].strip() if r.stdout.strip() else ""
+    except Exception as e:
+        log.debug(f"ClaudeUsage: claude-monitor discovery failed: {e}")
+    if not found:
+        found = "claude-monitor"  # let the terminal's own PATH have a go
+    with _LAUNCHER_LOCK:
+        _LAUNCHER = found
+    return _LAUNCHER
+
+
+def open_monitor(term_cmd: str) -> bool:
+    """Open the claude-monitor TUI in a new terminal on the host, detached.
+
+    `term_cmd` is a template whose {cmd} placeholder is replaced with the resolved
+    claude-monitor launcher path, e.g. "gnome-terminal -- {cmd}". Returns False if
+    the command can't start.
+    """
+    monitor = _launcher()
+    argv = []
+    for tok in shlex.split(term_cmd or ""):
+        argv.append(monitor if tok == "{cmd}" else tok.replace("{cmd}", monitor))
+    if not argv:
+        log.error("ClaudeUsage: empty terminal command template")
+        return False
+    cmd = ["flatpak-spawn", "--host", *argv] if _in_flatpak() else argv
+    try:
+        # start_new_session so the terminal outlives StreamController.
+        subprocess.Popen(cmd, cwd=_host_cwd(), start_new_session=True,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log.info(f"ClaudeUsage: opened monitor via {argv!r}")
+        return True
+    except Exception as e:
+        log.error(f"ClaudeUsage: failed to open terminal {cmd}: "
+                  f"{type(e).__name__}: {e}")
+        return False
 
 
 # Short-lived cache so several keys (or back-to-back ticks) coalesce onto one run

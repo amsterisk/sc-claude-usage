@@ -34,7 +34,7 @@ class ClaudeUsagePlugin(PluginBase):
         self.register(
             plugin_name="Claude Usage",
             github_repo="https://github.com/amsterisk/sc-claude-usage",
-            plugin_version="0.1.0",
+            plugin_version="0.1.1",
             app_version="1.5.0-beta",
         )
 

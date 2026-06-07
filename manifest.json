@@ -1,7 +1,7 @@
 {
     "id": "com_amsterisk_ClaudeUsage",
     "name": "Claude Usage",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "github": "https://github.com/amsterisk/sc-claude-usage",
     "tags": ["Utility", "Monitoring"],
     "minimum-app-version": "1.0.0",
